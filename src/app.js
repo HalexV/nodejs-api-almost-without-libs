@@ -8,6 +8,12 @@ const app = http.createServer(async (req, res) => {
 
   await parseJson(req, res);
 
+  if (method === "GET" && url === "/tasks") {
+    const tasks = await database.select({ table: "tasks" });
+
+    return res.end(JSON.stringify(tasks));
+  }
+
   if (method === "POST" && url === "/tasks") {
     const { title, description } = req.body;
 
