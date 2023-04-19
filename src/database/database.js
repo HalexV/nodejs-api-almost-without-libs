@@ -29,6 +29,10 @@ class Database {
 
     return data;
   }
+
+  async select({ table, filters }) {
+    return this.#database[table];
+  }
 }
 
 const database = new Database();
