@@ -30,8 +30,69 @@ class Database {
     return data;
   }
 
-  async select({ table, filters }) {
-    return this.#database[table];
+  async select({ table, filters, exact = false }) {
+    const filterArray =
+      typeof filters === "object" ? Object.entries(filters) : [];
+
+    if (filterArray.length === 0) return this.#database[table];
+
+    if (exact) {
+      const result = this.#database[table].filter((data) => {
+        const result = true;
+
+        for (const [key, value] of filterArray) {
+          if (!data[key]) return false;
+
+          const doesInclude = data[key].toLowerCase() === value.toLowerCase();
+
+          if (!doesInclude) return false;
+        }
+
+        return result;
+      });
+
+      return result;
+    }
+
+    const result = this.#database[table].filter((data) => {
+      const result = true;
+
+      for (const [key, value] of filterArray) {
+        if (!data[key]) return false;
+
+        const doesInclude = data[key]
+          .toLowerCase()
+          .includes(value.toLowerCase());
+
+        if (!doesInclude) return false;
+      }
+
+      return result;
+    });
+
+    return result;
+  }
+
+  async update(table, data, id) {
+    const index = this.#database[table].findIndex((task) => {
+      return task.id === id;
+    });
+
+    this.#database[table][index] = data;
+
+    await this.#persist();
+  }
+
+  async delete(table, id) {
+    const index = this.#database[table].findIndex((task) => {
+      return task.id === id;
+    });
+
+    if (index < 0) throw new Error("Index does not exist");
+
+    this.#database[table].splice(index, 1);
+
+    await this.#persist();
   }
 }
 

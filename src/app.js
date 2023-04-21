@@ -1,28 +1,27 @@
 import http from "node:http";
 import parseJson from "./middlewares/parseJson.js";
-import Task from "./entities/Task.js";
-import database from "./database/database.js";
+import router from "./routes/router.js";
+import parseQuery from "./middlewares/parseQuery.js";
 
 const app = http.createServer(async (req, res) => {
   const { method, url } = req;
 
+  await parseQuery(req, res);
   await parseJson(req, res);
 
-  if (method === "GET" && url === "/tasks") {
-    const tasks = await database.select({ table: "tasks" });
+  const uri = url.split("?")[0];
 
-    return res.end(JSON.stringify(tasks));
-  }
+  const route = Array.from(router.entries()).find(([path, handler]) => {
+    const result = `${method}${uri}`.match(path);
+    if (result) {
+      req.params = { ...result.groups } ?? {};
+      return true;
+    }
+  });
 
-  if (method === "POST" && url === "/tasks") {
-    const { title, description } = req.body;
+  const routeHandler = route ? route[1] : null;
 
-    const task = new Task({ title, description });
-
-    const result = await database.insert("tasks", task);
-
-    return res.end(JSON.stringify(result));
-  }
+  if (routeHandler) return await routeHandler(req, res);
 
   return res.end();
 });
